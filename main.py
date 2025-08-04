@@ -83,7 +83,7 @@ async def scheduled_post():
 def start_scheduler(loop):
     scheduler = BackgroundScheduler()
     scheduler.add_job(lambda: asyncio.run_coroutine_threadsafe(scheduled_post(), loop),
-                      trigger=IntervalTrigger(minutes=10))
+                      trigger=IntervalTrigger(minutes=1))
     scheduler.start()
 
 if __name__ == "__main__":
