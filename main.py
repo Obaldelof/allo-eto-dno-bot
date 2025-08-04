@@ -93,6 +93,17 @@ def extract_image(entry_soup):
 
     return None
 
+def extract_og_image(link):
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        response = requests.get(link, headers=headers, timeout=5)
+        soup = BeautifulSoup(response.content, 'html.parser')
+        og_img = soup.find('meta', property='og:image')
+        if og_img and og_img.get("content"):
+            return og_img["content"]
+    except Exception as e:
+        print(f"[og:image error] {link}: {e}")
+    return None
 
 def fetch_news():
     last_links = get_last_posted_links()
@@ -104,7 +115,7 @@ def fetch_news():
             req = urllib.request.Request(url, headers=headers)
             with urllib.request.urlopen(req) as response:
                 data = response.read()
-                soup = BeautifulSoup(data, "xml")
+                soup = BeautifulSoup(data, "lxml-xml")
 
             items = soup.find_all("item")
 
@@ -122,12 +133,16 @@ def fetch_news():
                 except:
                     continue
 
+                image_url = extract_image(item)
+                if not image_url:
+                    image_url = extract_og_image(link)
+
                 candidates.append({
                     "title": title,
                     "summary": description,
                     "link": link,
                     "date": entry_date,
-                    "image": extract_image(item)
+                    "image": image_url
                 })
 
         except Exception as e:
@@ -163,6 +178,7 @@ def fetch_news():
         return message, image_path if USE_IMAGES else None
 
     return None, None
+
 
 async def scheduled_post():
     message, image_path = fetch_news()
