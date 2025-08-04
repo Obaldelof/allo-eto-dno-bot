@@ -1,18 +1,23 @@
 import os
 import logging
-import feedparser
+import urllib.request
+import requests
+from bs4 import BeautifulSoup
 from random import choice
-from telegram import Update, Bot
+from PIL import Image, ImageDraw, ImageFont
+from telegram import Bot
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from telegram import Update
 from dotenv import load_dotenv
 import asyncio
-import datetime
+from datetime import datetime
+from email.utils import parsedate_to_datetime
+import xml.etree.ElementTree as ET
 
 load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
-ADD_IRONY = os.getenv("ADD_IRONY", "True") == "True"
 
 bot = Bot(token=BOT_TOKEN)
 
@@ -38,134 +43,145 @@ feeds = [
 
 HISTORY_FILE = "last_news.txt"
 
+
 def get_last_posted_links(limit=5):
     if not os.path.exists(HISTORY_FILE):
         return []
     with open(HISTORY_FILE, "r", encoding="utf-8") as f:
         return [line.strip() for line in f.readlines()][-limit:]
 
+
 def save_posted_link(link: str):
     with open(HISTORY_FILE, "a", encoding="utf-8") as f:
         f.write(link + "\n")
 
-from datetime import datetime
-from email.utils import parsedate_to_datetime
 
-from datetime import datetime
-from email.utils import parsedate_to_datetime
-import urllib.request
-import random
+def generate_image(title):
+    img = Image.new("RGB", (800, 400), color=(23, 29, 40))
+    draw = ImageDraw.Draw(img)
+    font = ImageFont.truetype("arial.ttf", 32)
+    draw.text((40, 180), title[:80] + ("..." if len(title) > 80 else ""), font=font, fill=(255, 255, 255))
+    img.save("generated.jpg")
+
+
+def extract_image(entry):
+    if entry.find("media:content") is not None:
+        return entry.find("media:content").attrib.get("url")
+    elif entry.find("enclosure") is not None:
+        return entry.find("enclosure").attrib.get("url")
+    elif entry.find("description") is not None:
+        soup = BeautifulSoup(entry.find("description").text, "html.parser")
+        img = soup.find("img")
+        if img and img.get("src"):
+            return img["src"]
+    return None
+
 
 def fetch_news():
     last_links = get_last_posted_links()
     candidates = []
-
     headers = {'User-Agent': 'Mozilla/5.0'}
+
     for url in feeds:
         try:
             req = urllib.request.Request(url, headers=headers)
             with urllib.request.urlopen(req) as response:
                 data = response.read()
-                d = feedparser.parse(data)
+                root = ET.fromstring(data)
 
-            print(f"🔍 Проверяю ленту: {url}")
-
-            for entry in d.entries:
-                link = entry.get("link", "")
+            for item in root.iter("item"):
+                link = item.findtext("link", default="")
                 if link in last_links:
                     continue
 
                 try:
-                    if "published" in entry:
-                        entry_date = parsedate_to_datetime(entry.published)
-                    elif "updated" in entry:
-                        entry_date = parsedate_to_datetime(entry.updated)
+                    pub_date = item.findtext("pubDate")
+                    if pub_date:
+                        entry_date = parsedate_to_datetime(pub_date)
                     else:
-                        print(f"⏭ Пропущена без даты: {entry.get('title', 'без названия')}")
                         continue
-                except Exception as e:
-                    print(f"⛔ Ошибка даты: {e}")
+                except:
                     continue
 
-                summary = entry.get("summary") or entry.get("description", "")
+                summary = item.findtext("description") or ""
                 if not summary:
-                    print(f"⏭ Пропущена без описания: {entry.get('title', 'без названия')}")
                     continue
 
                 candidates.append({
-                    "title": entry.get("title", "Без заголовка"),
+                    "title": item.findtext("title", default="Без заголовка"),
                     "summary": summary,
                     "link": link,
                     "date": entry_date,
-                    "source": url
+                    "image": extract_image(item)
                 })
-
-        except Exception as e:
-            print(f"❌ Ошибка в {url}: {e}")
+        except:
             continue
 
     if candidates:
-        chosen = random.choice(candidates)
+        chosen = choice(candidates)
         irony = choice(irony_lines)
         message = (
+            f" <b>Алло, это дно?</b>\n\n"
             f"☎️ <b>{chosen['title']}</b>\n\n"
             f"{chosen['summary']}\n\n"
             f"<i>{irony}</i>\n\n"
-            "—\n"
+            "\u2014\n"
             "<a href='https://t.me/alloetodno'>Алло, это дно? Подпишите!</a>"
         )
         save_posted_link(chosen["link"])
-        print(f"[{datetime.now()}] 🎲 Случайная новость: {chosen['title']} (из {chosen['source']})")
-        return message
 
-    print(f"[{datetime.now()}] ⏭ Новостей не найдено или все уже были.")
-    return None
+        image_path = "generated.jpg"
+        if chosen["image"]:
+            try:
+                img_data = requests.get(chosen["image"], timeout=5).content
+                with open("temp.jpg", "wb") as handler:
+                    handler.write(img_data)
+                image_path = "temp.jpg"
+            except:
+                generate_image(chosen["title"])
+        else:
+            generate_image(chosen["title"])
+
+        return message, image_path
+
+    return None, None
 
 
 async def scheduled_post():
-    print(f"[{datetime.now()}] ⏰ scheduled_post() вызван")
-    message = fetch_news()
+    message, image_path = fetch_news()
     if message:
         try:
-            await bot.send_message(
+            await bot.send_photo(
                 chat_id=CHANNEL_ID,
-                text=message,
-                parse_mode="HTML",
-                disable_web_page_preview=True
+                photo=open(image_path, "rb"),
+                caption=message,
+                parse_mode="HTML"
             )
-            print(f"[{datetime.now()}] 📤 Новость отправлена в канал.")
         except Exception as e:
-            print(f"[{datetime.now()}] ❌ Ошибка при отправке: {e}")
-    else:
-        print(f"[{datetime.now()}] ⏭ Нет новых новостей.")
+            print(f"[ERROR] {e}")
+
 
 async def background_news_loop():
     while True:
         await scheduled_post()
         await asyncio.sleep(60)
 
+
 async def test_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = fetch_news()
+    message, image_path = fetch_news()
     if message:
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id, 
-            text=message, 
-            parse_mode="HTML",
-            disable_web_page_preview=True
+        await context.bot.send_photo(
+            chat_id=update.effective_chat.id,
+            photo=open(image_path, "rb"),
+            caption=message,
+            parse_mode="HTML"
         )
-    else:
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id, 
-            text="Нет новых новостей."
-        )
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("test", test_command))
-
     loop = asyncio.get_event_loop()
     loop.create_task(background_news_loop())
-
     app.run_polling()
