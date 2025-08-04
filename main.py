@@ -87,7 +87,6 @@ def fetch_news():
             f"🔗 <a href='{newest_entry['link']}'>Читать полностью</a>\n\n"
             f"<i>{irony}</i>\n\n"
             "—\n"
-            "🤡 🤬 😱 🤔 ❤️\n\n"
             "<a href='https://t.me/alloetodno'>Подписаться на канал</a>"
         )
         save_posted_link(newest_entry["link"])
