@@ -64,23 +64,31 @@ def generate_image(title):
     draw.text((40, 180), title[:80] + ("..." if len(title) > 80 else ""), font=font, fill=(255, 255, 255))
     img.save("generated.jpg")
 
-def extract_image(item):
-    enclosure = item.find("enclosure")
-    if enclosure and enclosure.get("url"):
-        return enclosure["url"]
-    
-    media = item.find("media:content")
+def extract_image(entry_soup):
+        media = entry_soup.find("media:content")
     if media and media.get("url"):
         return media["url"]
-    
-    desc = item.find("description")
-    if desc:
-        soup = BeautifulSoup(desc.text, "html.parser")
+
+    enclosure = entry_soup.find("enclosure")
+    if enclosure and enclosure.get("url"):
+        return enclosure["url"]
+
+    description = entry_soup.find("description")
+    if description:
+        soup = BeautifulSoup(description.text, "html.parser")
         img = soup.find("img")
         if img and img.get("src"):
             return img["src"]
-    
+
+       content = entry_soup.find("content:encoded")
+    if content:
+        soup = BeautifulSoup(content.text, "html.parser")
+        img = soup.find("img")
+        if img and img.get("src"):
+            return img["src"]
+
     return None
+
 
 def fetch_news():
     last_links = get_last_posted_links()
