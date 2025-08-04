@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
     # Планировщик
     scheduler = BackgroundScheduler()
-    scheduler.add_job(run_async_job, 'interval', minutes=30)
+    scheduler.add_job(run_async_job, 'interval', minutes=1)
     scheduler.start()
 
     # Telegram App
