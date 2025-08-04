@@ -4,8 +4,6 @@ import feedparser
 from random import choice
 from telegram import Update, Bot
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.interval import IntervalTrigger
 from dotenv import load_dotenv
 import asyncio
 import datetime
@@ -75,13 +73,6 @@ def fetch_news():
     print(f"[{datetime.datetime.now()}] ⏭ Все новости уже были опубликованы.")
     return None
 
-async def test_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = fetch_news()
-    if message:
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=message, parse_mode="HTML")
-    else:
-        await context.bot.send_message(chat_id=update.effective_chat.id, text="Нет новых новостей.")
-
 async def scheduled_post():
     print(f"[{datetime.datetime.now()}] ⏰ scheduled_post() вызван")
     message = fetch_news()
@@ -90,15 +81,21 @@ async def scheduled_post():
             await bot.send_message(chat_id=CHANNEL_ID, text=message, parse_mode="HTML")
             print(f"[{datetime.datetime.now()}] 📤 Новость отправлена в канал.")
         except Exception as e:
-            print(f"[{datetime.datetime.now()}] ❌ Ошибка при отправке в Telegram: {e}")
+            print(f"[{datetime.datetime.now()}] ❌ Ошибка при отправке: {e}")
     else:
-        print(f"[{datetime.datetime.now()}] ⏭ Нет новых новостей для публикации.")
+        print(f"[{datetime.datetime.now()}] ⏭ Нет новых новостей.")
 
-def start_scheduler(loop):
-    scheduler = BackgroundScheduler()
-    scheduler.add_job(lambda: asyncio.run_coroutine_threadsafe(scheduled_post(), loop),
-                      trigger=IntervalTrigger(minutes=1))
-    scheduler.start()
+async def background_news_loop():
+    while True:
+        await scheduled_post()
+        await asyncio.sleep(60)
+
+async def test_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    message = fetch_news()
+    if message:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=message, parse_mode="HTML")
+    else:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="Нет новых новостей.")
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
@@ -107,6 +104,6 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("test", test_command))
 
     loop = asyncio.get_event_loop()
-    start_scheduler(loop)
+    loop.create_task(background_news_loop())
 
     app.run_polling()
