@@ -52,7 +52,7 @@ if __name__ == "__main__":
 
     # Планировщик запускается фоном
     scheduler = BackgroundScheduler()
-    scheduler.add_job(scheduled_post, 'interval', minutes=30)
+    scheduler.add_job(scheduled_post, 'interval', minutes=1)
     scheduler.start()
 
     app = ApplicationBuilder().token(BOT_TOKEN).build()
