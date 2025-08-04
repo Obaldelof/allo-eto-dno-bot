@@ -1,4 +1,3 @@
-
 import logging
 import os
 import feedparser
@@ -30,21 +29,10 @@ def post_news():
         d = feedparser.parse(url)
         if d.entries:
             entry = d.entries[0]
-            message = f"📰 <b>{entry.title}</b>\n\n{entry.summary}\n\n🔗 {entry.link}"
+            message = f"<b>{entry.title}</b>\n\n{entry.summary}\n\nСсылка: {entry.link}"
             if ADD_IRONY:
                 from random import choice
                 message += f"\n\n<i>{choice(irony_lines)}</i>"
-            bot.send_message(chat_id=CHANNEL_ID, text=message, parse_mode="HTML")
-            break
-
-{entry.summary}
-
-🔗 {entry.link}"
-            if ADD_IRONY:
-                from random import choice
-                message += f"
-
-<i>{choice(irony_lines)}</i>"
             bot.send_message(chat_id=CHANNEL_ID, text=message, parse_mode="HTML")
             break
 
