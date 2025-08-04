@@ -30,16 +30,33 @@ feeds = [
     "https://meduza.io/rss/all"
 ]
 
+HISTORY_FILE = "last_news.txt"
+
+def get_last_posted_links(limit=5):
+    if not os.path.exists(HISTORY_FILE):
+        return []
+    with open(HISTORY_FILE, "r", encoding="utf-8") as f:
+        return [line.strip() for line in f.readlines()][-limit:]
+
+def save_posted_link(link: str):
+    with open(HISTORY_FILE, "a", encoding="utf-8") as f:
+        f.write(link + "\n")
+
 def fetch_news():
+    last_links = get_last_posted_links()
+
     for url in feeds:
         d = feedparser.parse(url)
         if d.entries:
-            entry = d.entries[0]
-            message = f"<b>{entry.title}</b>\n\n{entry.summary}\n\nСсылка: {entry.link}"
-            if ADD_IRONY:
-                message += f"\n\n<i>{choice(irony_lines)}</i>"
-            return message
-    return "Новостей не найдено."
+            for entry in d.entries:
+                if entry.link not in last_links:
+                    message = f"<b>{entry.title}</b>\n\n{entry.summary}\n\nСсылка: {entry.link}"
+                    if ADD_IRONY:
+                        message += f"\n\n<i>{choice(irony_lines)}</i>"
+                    save_posted_link(entry.link)
+                    return message
+
+    return "Свежих новостей не найдено."
 
 async def test_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = fetch_news()
