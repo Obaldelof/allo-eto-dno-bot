@@ -27,7 +27,14 @@ irony_lines = [
 
 feeds = [
     "https://lenta.ru/rss",
-    "https://meduza.io/rss/all"
+    "https://meduza.io/rss/all",
+    "https://ria.ru/export/rss2/archive/index.xml",
+    "https://tass.ru/rss/v2.xml",
+    "https://rssexport.rbc.ru/rbcnews/news/30/full.rss",
+    "https://www.kommersant.ru/RSS/news.xml",
+    "https://vc.ru/rss/all",
+    "https://thebell.io/feed",
+    "https://holod.media/feed/"
 ]
 
 HISTORY_FILE = "last_news.txt"
