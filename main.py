@@ -166,7 +166,6 @@ def fetch_news():
         chosen = choice(candidates)
         irony = choice(irony_lines)
         message = (
-            f" <b>Алло, это дно?</b>\n\n"
             f"☎️ <b>{chosen['title']}</b>\n\n"
             f"{chosen['summary']}\n\n"
             f"<i>{irony}</i>\n\n"
