@@ -6,11 +6,12 @@ from telegram import Update, Bot
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from apscheduler.schedulers.background import BackgroundScheduler
 from dotenv import load_dotenv
+import asyncio
 
 load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
+CHANNEL_ID = os.getenv("CHANNEL_ID")
 ADD_IRONY = os.getenv("ADD_IRONY", "True") == "True"
 
 bot = Bot(token=BOT_TOKEN)
@@ -43,21 +44,22 @@ async def test_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = fetch_news()
     await context.bot.send_message(chat_id=update.effective_chat.id, text=message, parse_mode="HTML")
 
-def scheduled_post():
+async def scheduled_post():
     message = fetch_news()
-    bot.send_message(chat_id=CHANNEL_ID, text=message, parse_mode="HTML")
+    await bot.send_message(chat_id=CHANNEL_ID, text=message, parse_mode="HTML")
+
+def run_async_job():
+    asyncio.run(scheduled_post())
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
-    # Планировщик запускается фоном
+    # Планировщик
     scheduler = BackgroundScheduler()
-    scheduler.add_job(scheduled_post, 'interval', minutes=1)
+    scheduler.add_job(run_async_job, 'interval', minutes=1)
     scheduler.start()
 
+    # Telegram App
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("test", test_command))
-    app.run_polling()
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
     app.run_polling()
