@@ -1,7 +1,9 @@
-import logging
 import os
 import feedparser
+import logging
 from telegram import Bot
+from telegram.constants import ParseMode
+from telegram.error import TelegramError
 from apscheduler.schedulers.blocking import BlockingScheduler
 from dotenv import load_dotenv
 
@@ -33,10 +35,14 @@ def post_news():
             if ADD_IRONY:
                 from random import choice
                 message += f"\n\n<i>{choice(irony_lines)}</i>"
-            bot.send_message(chat_id=CHANNEL_ID, text=message, parse_mode="HTML")
+            try:
+                bot.send_message(chat_id=CHANNEL_ID, text=message, parse_mode=ParseMode.HTML)
+            except TelegramError as e:
+                print(f"Ошибка отправки: {e}")
             break
 
 scheduler = BlockingScheduler()
 scheduler.add_job(post_news, 'interval', minutes=30)
-logging.basicConfig()
+
+logging.basicConfig(level=logging.INFO)
 scheduler.start()
