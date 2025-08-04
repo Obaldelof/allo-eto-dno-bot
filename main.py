@@ -5,6 +5,7 @@ from random import choice
 from telegram import Update, Bot
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
 from dotenv import load_dotenv
 import asyncio
 
@@ -48,18 +49,20 @@ async def scheduled_post():
     message = fetch_news()
     await bot.send_message(chat_id=CHANNEL_ID, text=message, parse_mode="HTML")
 
-def run_async_job():
-    asyncio.run(scheduled_post())
+def start_scheduler(loop):
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(lambda: asyncio.run_coroutine_threadsafe(scheduled_post(), loop),
+                      trigger=IntervalTrigger(minutes=1))
+    scheduler.start()
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
-    # Планировщик
-    scheduler = BackgroundScheduler()
-    scheduler.add_job(run_async_job, 'interval', minutes=1)
-    scheduler.start()
-
-    # Telegram App
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("test", test_command))
+
+    # запуск планировщика в контексте event loop
+    loop = asyncio.get_event_loop()
+    start_scheduler(loop)
+
     app.run_polling()
