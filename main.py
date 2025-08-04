@@ -42,7 +42,7 @@ feeds = [
     "https://feeds.bbci.co.uk/russian/rss.xml",
     "https://fishki.net/rss.xml",
     "https://www.yaplakal.com/rss_news.xml",
-    "https://pikabu.ru/xml/rss2/new.xml"?
+    "https://pikabu.ru/xml/rss2/new.xml",
     "https://vc.ru/rss/all",
     "https://habr.com/ru/rss/all/all/",
     "https://nplus1.ru/rss",
