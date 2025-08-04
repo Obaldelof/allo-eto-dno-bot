@@ -170,8 +170,8 @@ def fetch_news():
         irony = choice(irony_lines)
         message = (
             f"☎️ <b>{chosen['title']}</b>\n"         
-            f"{chosen['summary']}\n"
-            f"<i>{irony}</i>\n"      
+            f"{chosen['summary']}\n\n"
+            f"<i>{irony}</i>\n\n"      
             "<a href='https://t.me/alloetodno'>Алло, это дно? Подпишите!</a>"
         )
         save_posted_link(chosen["link"])
