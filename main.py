@@ -5,18 +5,20 @@ import requests
 from bs4 import BeautifulSoup
 from random import choice
 from PIL import Image, ImageDraw, ImageFont
+from telegram import Bot
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from telegram import Update
 from dotenv import load_dotenv
 import asyncio
 from datetime import datetime
 from email.utils import parsedate_to_datetime
 
-# NOTE: telegram bot libraries removed due to environment limitations
-# Instead, messages will be printed to console for testing
-
 load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-CHANNEL_ID = int(os.getenv("CHANNEL_ID", "0"))
+CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
+
+bot = Bot(token=BOT_TOKEN)
 
 irony_lines = [
     "Ну, как вам такое?",
@@ -119,7 +121,7 @@ def fetch_news():
             f"☎️ <b>{chosen['title']}</b>\n\n"
             f"{chosen['summary']}\n\n"
             f"<i>{irony}</i>\n\n"
-            "—\n"
+            "\u2014\n"
             "<a href='https://t.me/alloetodno'>Алло, это дно? Подпишите!</a>"
         )
         save_posted_link(chosen["link"])
@@ -143,22 +145,38 @@ def fetch_news():
 async def scheduled_post():
     message, image_path = fetch_news()
     if message:
-        print("[MESSAGE]", message)
-        print("[IMAGE]", image_path)
+        try:
+            await bot.send_photo(
+                chat_id=CHANNEL_ID,
+                photo=open(image_path, "rb"),
+                caption=message,
+                parse_mode="HTML"
+            )
+        except Exception as e:
+            print(f"[ERROR] {e}")
 
 async def background_news_loop():
     while True:
         await scheduled_post()
         await asyncio.sleep(60)
 
-async def test_command():
+async def test_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message, image_path = fetch_news()
     if message:
-        print("[TEST COMMAND]", message)
-        print("[IMAGE]", image_path)
+        await context.bot.send_photo(
+            chat_id=update.effective_chat.id,
+            photo=open(image_path, "rb"),
+            caption=message,
+            parse_mode="HTML"
+        )
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    loop = asyncio.get_event_loop()
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
+    app.add_handler(CommandHandler("test", test_command))
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     loop.create_task(background_news_loop())
-    loop.run_forever()
+
+    app.run_polling()
