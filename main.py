@@ -166,15 +166,10 @@ def fetch_news():
         chosen = choice(candidates)
         irony = choice(irony_lines)
         message = (
-            f"☎️ <b>{chosen['title']}</b>\n\n
-            
-            "
-            f"{chosen['summary']}\n\n
-            
-            "
-            f"<i>{irony}</i>\n\n
-            "            
-            f"<a href='https://t.me/alloetodno'>Алло, это дно? Подпишите!</a>"
+            f"☎️ <b>{chosen['title']}</b>\n\n"         
+            f"{chosen['summary']}\n\n"
+            f"<i>{irony}</i>\n\n"      
+            "<a href='https://t.me/alloetodno'>Алло, это дно? Подпишите!</a>"
         )
         save_posted_link(chosen["link"])
 
