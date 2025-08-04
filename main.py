@@ -50,9 +50,16 @@ def fetch_news():
         if d.entries:
             for entry in d.entries:
                 if entry.link not in last_links:
-                    message = f"<b>{entry.title}</b>\n\n{entry.summary}\n\nСсылка: {entry.link}"
-                    if ADD_IRONY:
-                        message += f"\n\n<i>{choice(irony_lines)}</i>"
+                    irony = choice(irony_lines)
+                    message = (
+                        f"🗞 <b>{entry.title}</b>\n\n"
+                        f"{entry.summary}\n\n"
+                        f"🔗 <a href='{entry.link}'>Читать полностью</a>\n\n"
+                        f"<i>{irony}</i>\n\n"
+                        "—\n"
+                        "🤡 🤬 😱 🤔 ❤️\n\n"
+                        "<a href='https://t.me/alloetodno'>Подписаться на канал</a>"
+                    )
                     save_posted_link(entry.link)
                     return message
 
