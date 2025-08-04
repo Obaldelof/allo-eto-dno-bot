@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-CHANNEL_ID = os.getenv("CHANNEL_ID")
+CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
 ADD_IRONY = os.getenv("ADD_IRONY", "True") == "True"
 
 bot = Bot(token=BOT_TOKEN)
