@@ -140,6 +140,8 @@ def fetch_news():
 
                 try:
                     entry_date = parsedate_to_datetime(pub_date_raw)
+                    if (datetime.now(entry_date.tzinfo) - entry_date).total_seconds() > 1800:
+                        continue  # Пропустить старые новости (старше 30 минут)
                 except:
                     continue
 
@@ -164,6 +166,7 @@ def fetch_news():
         chosen = choice(candidates)
         irony = choice(irony_lines)
         message = (
+            f" <b>Алло, это дно?</b>\n\n"
             f"☎️ <b>{chosen['title']}</b>\n\n"
             f"{chosen['summary']}\n\n"
             f"<i>{irony}</i>\n\n"
