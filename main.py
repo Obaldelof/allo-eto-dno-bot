@@ -1,6 +1,7 @@
 import os
 import logging
 import urllib.request
+from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
 from random import choice
@@ -99,20 +100,22 @@ def extract_og_image(link):
         response = requests.get(link, headers=headers, timeout=5)
         soup = BeautifulSoup(response.content, 'html.parser')
 
-        # Иногда og:image может быть записан через name вместо property
-        og_img = soup.find('meta', attrs={"property": "og:image"}) or soup.find('meta', attrs={"name": "og:image"})
-
+        # 1. og:image
+        og_img = soup.find('meta', property='og:image')
         if og_img and og_img.get("content"):
+            print(f"[og:image] Найдено: {og_img['content']}")
             return og_img["content"]
 
-        # Альтернатива: взять первый img, если og:image нет
+        # 2. первая <img>
         img_tag = soup.find("img")
         if img_tag and img_tag.get("src"):
-            return img_tag["src"]
+            img_src = img_tag["src"]
+            full_url = urljoin(link, img_src)
+            print(f"[img tag fallback] Найдено: {full_url}")
+            return full_url
 
     except Exception as e:
         print(f"[og:image error] {link}: {e}")
-
     return None
 
 def fetch_news():
@@ -166,9 +169,9 @@ def fetch_news():
         chosen = choice(candidates)
         irony = choice(irony_lines)
         message = (
-            f"☎️ <b>{chosen['title']}</b>\n\n"         
-            f"{chosen['summary']}\n\n"
-            f"<i>{irony}</i>\n\n"      
+            f"☎️ <b>{chosen['title']}</b>\n"         
+            f"{chosen['summary']}\n"
+            f"<i>{irony}</i>\n"      
             "<a href='https://t.me/alloetodno'>Алло, это дно? Подпишите!</a>"
         )
         save_posted_link(chosen["link"])
