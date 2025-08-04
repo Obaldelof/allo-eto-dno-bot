@@ -98,11 +98,21 @@ def extract_og_image(link):
         headers = {'User-Agent': 'Mozilla/5.0'}
         response = requests.get(link, headers=headers, timeout=5)
         soup = BeautifulSoup(response.content, 'html.parser')
-        og_img = soup.find('meta', property='og:image')
+
+        # Иногда og:image может быть записан через name вместо property
+        og_img = soup.find('meta', attrs={"property": "og:image"}) or soup.find('meta', attrs={"name": "og:image"})
+
         if og_img and og_img.get("content"):
             return og_img["content"]
+
+        # Альтернатива: взять первый img, если og:image нет
+        img_tag = soup.find("img")
+        if img_tag and img_tag.get("src"):
+            return img_tag["src"]
+
     except Exception as e:
         print(f"[og:image error] {link}: {e}")
+
     return None
 
 def fetch_news():
