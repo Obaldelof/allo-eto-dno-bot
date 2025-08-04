@@ -51,49 +51,75 @@ def save_posted_link(link: str):
 from datetime import datetime
 from email.utils import parsedate_to_datetime
 
+from datetime import datetime
+from email.utils import parsedate_to_datetime
+import urllib.request
+import random
+
 def fetch_news():
     last_links = get_last_posted_links()
-    newest_entry = None
+    candidates = []
 
+    headers = {'User-Agent': 'Mozilla/5.0'}
     for url in feeds:
-        d = feedparser.parse(url)
-        if d.entries:
+        try:
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req) as response:
+                data = response.read()
+                d = feedparser.parse(data)
+
+            print(f"🔍 Проверяю ленту: {url}")
+
             for entry in d.entries:
-                if entry.link in last_links:
+                link = entry.get("link", "")
+                if link in last_links:
                     continue
 
-                # Определяем дату публикации
-                entry_date = None
-                if 'published' in entry:
-                    entry_date = parsedate_to_datetime(entry.published)
-                elif 'updated' in entry:
-                    entry_date = parsedate_to_datetime(entry.updated)
-                else:
-                    continue  # Если нет даты — пропускаем
+                try:
+                    if "published" in entry:
+                        entry_date = parsedate_to_datetime(entry.published)
+                    elif "updated" in entry:
+                        entry_date = parsedate_to_datetime(entry.updated)
+                    else:
+                        print(f"⏭ Пропущена без даты: {entry.get('title', 'без названия')}")
+                        continue
+                except Exception as e:
+                    print(f"⛔ Ошибка даты: {e}")
+                    continue
 
-                if not newest_entry or entry_date > newest_entry["date"]:
-                    newest_entry = {
-                        "title": entry.title,
-                        "summary": entry.summary,
-                        "link": entry.link,
-                        "date": entry_date
-                    }
+                summary = entry.get("summary") or entry.get("description", "")
+                if not summary:
+                    print(f"⏭ Пропущена без описания: {entry.get('title', 'без названия')}")
+                    continue
 
-    if newest_entry:
+                candidates.append({
+                    "title": entry.get("title", "Без заголовка"),
+                    "summary": summary,
+                    "link": link,
+                    "date": entry_date,
+                    "source": url
+                })
+
+        except Exception as e:
+            print(f"❌ Ошибка в {url}: {e}")
+            continue
+
+    if candidates:
+        chosen = random.choice(candidates)
         irony = choice(irony_lines)
         message = (
-            f"🗞 <b>{newest_entry['title']}</b>\n\n"
-            f"{newest_entry['summary']}\n\n"
-            f"🔗 <a href='{newest_entry['link']}'>Читать полностью</a>\n\n"
+            f"🗞 <b>{chosen['title']}</b>\n\n"
+            f"{chosen['summary']}\n\n"
+            f"🔗 <a href='{chosen['link']}'>Читать полностью</a>\n\n"
             f"<i>{irony}</i>\n\n"
             "—\n"
             "<a href='https://t.me/alloetodno'>Подписаться на канал</a>"
         )
-        save_posted_link(newest_entry["link"])
-        print(f"[{datetime.now()}] ✅ Новая новость: {newest_entry['title']}")
+        save_posted_link(chosen["link"])
+        print(f"[{datetime.now()}] 🎲 Случайная новость: {chosen['title']} (из {chosen['source']})")
         return message
 
-    print(f"[{datetime.now()}] ⏭ Все новости уже были опубликованы.")
+    print(f"[{datetime.now()}] ⏭ Новостей не найдено или все уже были.")
     return None
 
 
