@@ -98,16 +98,16 @@ def fetch_news():
 
 
 async def scheduled_post():
-    print(f"[{datetime.datetime.now()}] ⏰ scheduled_post() вызван")
+    print(f"[{datetime.now()}] ⏰ scheduled_post() вызван")
     message = fetch_news()
     if message:
         try:
             await bot.send_message(chat_id=CHANNEL_ID, text=message, parse_mode="HTML")
-            print(f"[{datetime.datetime.now()}] 📤 Новость отправлена в канал.")
+            print(f"[{datetime.now()}] 📤 Новость отправлена в канал.")
         except Exception as e:
-            print(f"[{datetime.datetime.now()}] ❌ Ошибка при отправке: {e}")
+            print(f"[{datetime.now()}] ❌ Ошибка при отправке: {e}")
     else:
-        print(f"[{datetime.datetime.now()}] ⏭ Нет новых новостей.")
+        print(f"[{datetime.now()}] ⏭ Нет новых новостей.")
 
 async def background_news_loop():
     while True:
