@@ -109,8 +109,8 @@ def fetch_news():
         irony = choice(irony_lines)
         message = (
             f" <b>Алло, это дно?</b>\n\n"
-            f"☎️ <b>{newest_entry['title']}</b>\n\n"
-            f"{newest_entry['summary']}\n\n"
+            f"☎️ <b>{chosen['title']}</b>\n\n"
+            f"{chosen['summary']}\n\n"
             f"<i>{irony}</i>\n\n"
             "—\n"
             "<a href='https://t.me/alloetodno'>Алло, это дно? Подпишите!</a>"
