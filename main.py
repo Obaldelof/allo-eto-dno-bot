@@ -110,10 +110,9 @@ def fetch_news():
         message = (
             f"🗞 <b>{chosen['title']}</b>\n\n"
             f"{chosen['summary']}\n\n"
-            f"🔗 <a href='{chosen['link']}'>Читать полностью</a>\n\n"
             f"<i>{irony}</i>\n\n"
             "—\n"
-            "<a href='https://t.me/alloetodno'>Подписаться на канал</a>"
+            "<a href='https://t.me/alloetodno'>Алло, это дно? Подпишите!</a>"
         )
         save_posted_link(chosen["link"])
         print(f"[{datetime.now()}] 🎲 Случайная новость: {chosen['title']} (из {chosen['source']})")
