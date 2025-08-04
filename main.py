@@ -32,16 +32,31 @@ irony_lines = [
 ]
 
 feeds = [
-    "https://lenta.ru/rss",
     "https://meduza.io/rss/all",
     "https://ria.ru/export/rss2/archive/index.xml",
     "https://tass.ru/rss/v2.xml",
     "https://rssexport.rbc.ru/rbcnews/news/30/full.rss",
     "https://www.kommersant.ru/RSS/news.xml",
+    "https://lenta.ru/rss",
+    "https://www.ngs.ru/rss/",
+    "https://feeds.bbci.co.uk/russian/rss.xml",
+    "https://fishki.net/rss.xml",
+    "https://www.yaplakal.com/rss_news.xml",
+    "https://pikabu.ru/xml/rss2/new.xml"?
     "https://vc.ru/rss/all",
-    "https://thebell.io/feed",
-    "https://holod.media/feed/"
-]
+    "https://habr.com/ru/rss/all/all/",
+    "https://nplus1.ru/rss",
+    "https://techcrunch.com/feed/",
+    "https://www.theverge.com/rss/index.xml",
+    "https://www.flickr.com/services/feeds/photos_public.gne?format=rss_200",
+    "https://500px.com/editors.rss",
+    "https://unsplash.com/blog/feed",
+    "https://arzamas.academy/feed",
+    "https://postnauka.ru/rss",
+    "https://www.cosmo.ru/rss/all.xml",
+    "https://www.starhit.ru/rss/all/",
+    "https://www.maximonline.ru/feed/"  
+    ]
 
 HISTORY_FILE = "last_news.txt"
 
@@ -169,7 +184,7 @@ def fetch_news():
         chosen = choice(candidates)
         irony = choice(irony_lines)
         message = (
-            f"☎️ <b>{chosen['title']}</b>\n"         
+            f"☎️ <b>{chosen['title']}</b>\n\n"         
             f"{chosen['summary']}\n\n"
             f"<i>{irony}</i>\n\n"      
             "<a href='https://t.me/alloetodno'>Алло, это дно? Подпишите!</a>"
