@@ -68,19 +68,10 @@ def generate_image(title):
     img.save("generated.jpg")
 
 
-def extract_image(entry):
-    try:
-        if "media_content" in entry:
-            return entry.media_content[0].get("url")
-        elif "enclosures" in entry and entry.enclosures:
-            return entry.enclosures[0].get("href")
-        elif "summary" in entry and "<img" in entry.summary:
-            soup = BeautifulSoup(entry.summary, "html.parser")
-            img = soup.find("img")
-            if img and img.get("src"):
-                return img["src"]
-    except Exception as e:
-        print("[extract_image error]", e)
+def extract_image(entry_soup):
+    img = entry_soup.find("img")
+    if img and img.get("src"):
+        return img["src"]
     return None
 
 
@@ -94,35 +85,32 @@ def fetch_news():
             req = urllib.request.Request(url, headers=headers)
             with urllib.request.urlopen(req) as response:
                 data = response.read()
-                import feedparser
-                d = feedparser.parse(data)
+                soup = BeautifulSoup(data, "xml")
 
-            for entry in d.entries:
-                link = entry.get("link", "")
-                if link in last_links:
+            items = soup.find_all("item")
+
+            for item in items:
+                title = item.title.text if item.title else "Без заголовка"
+                link = item.link.text if item.link else ""
+                description = item.description.text if item.description else ""
+                pub_date_raw = item.pubDate.text if item.pubDate else None
+
+                if link in last_links or not pub_date_raw or not description:
                     continue
 
                 try:
-                    if "published" in entry:
-                        entry_date = parsedate_to_datetime(entry.published)
-                    elif "updated" in entry:
-                        entry_date = parsedate_to_datetime(entry.updated)
-                    else:
-                        continue
+                    entry_date = parsedate_to_datetime(pub_date_raw)
                 except:
                     continue
 
-                summary = entry.get("summary") or entry.get("description", "")
-                if not summary:
-                    continue
-
                 candidates.append({
-                    "title": entry.get("title", "Без заголовка"),
-                    "summary": summary,
+                    "title": title,
+                    "summary": description,
                     "link": link,
                     "date": entry_date,
-                    "image": extract_image(entry)
+                    "image": extract_image(item)
                 })
+
         except Exception as e:
             print(f"[feed error] {url}: {e}")
             traceback.print_exc()
