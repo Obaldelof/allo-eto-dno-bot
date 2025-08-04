@@ -8,6 +8,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from dotenv import load_dotenv
 import asyncio
+import datetime
 
 load_dotenv()
 
@@ -68,17 +69,30 @@ def fetch_news():
                         "<a href='https://t.me/alloetodno'>Подписаться на канал</a>"
                     )
                     save_posted_link(entry.link)
+                    print(f"[{datetime.datetime.now()}] ✅ Новая новость: {entry.title}")
                     return message
 
-    return "Свежих новостей не найдено."
+    print(f"[{datetime.datetime.now()}] ⏭ Все новости уже были опубликованы.")
+    return None
 
 async def test_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = fetch_news()
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=message, parse_mode="HTML")
+    if message:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=message, parse_mode="HTML")
+    else:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="Нет новых новостей.")
 
 async def scheduled_post():
+    print(f"[{datetime.datetime.now()}] ⏰ scheduled_post() вызван")
     message = fetch_news()
-    await bot.send_message(chat_id=CHANNEL_ID, text=message, parse_mode="HTML")
+    if message:
+        try:
+            await bot.send_message(chat_id=CHANNEL_ID, text=message, parse_mode="HTML")
+            print(f"[{datetime.datetime.now()}] 📤 Новость отправлена в канал.")
+        except Exception as e:
+            print(f"[{datetime.datetime.now()}] ❌ Ошибка при отправке в Telegram: {e}")
+    else:
+        print(f"[{datetime.datetime.now()}] ⏭ Нет новых новостей для публикации.")
 
 def start_scheduler(loop):
     scheduler = BackgroundScheduler()
@@ -92,7 +106,6 @@ if __name__ == "__main__":
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("test", test_command))
 
-    # запуск планировщика в контексте event loop
     loop = asyncio.get_event_loop()
     start_scheduler(loop)
 
