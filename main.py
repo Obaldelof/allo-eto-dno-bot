@@ -48,30 +48,55 @@ def save_posted_link(link: str):
     with open(HISTORY_FILE, "a", encoding="utf-8") as f:
         f.write(link + "\n")
 
+from datetime import datetime
+from email.utils import parsedate_to_datetime
+
 def fetch_news():
     last_links = get_last_posted_links()
+    newest_entry = None
 
     for url in feeds:
         d = feedparser.parse(url)
         if d.entries:
             for entry in d.entries:
-                if entry.link not in last_links:
-                    irony = choice(irony_lines)
-                    message = (
-                        f"🗞 <b>{entry.title}</b>\n\n"
-                        f"{entry.summary}\n\n"
-                        f"🔗 <a href='{entry.link}'>Читать полностью</a>\n\n"
-                        f"<i>{irony}</i>\n\n"
-                        "—\n"
-                        "🤡 🤬 😱 🤔 ❤️\n\n"
-                        "<a href='https://t.me/alloetodno'>Подписаться на канал</a>"
-                    )
-                    save_posted_link(entry.link)
-                    print(f"[{datetime.datetime.now()}] ✅ Новая новость: {entry.title}")
-                    return message
+                if entry.link in last_links:
+                    continue
 
-    print(f"[{datetime.datetime.now()}] ⏭ Все новости уже были опубликованы.")
+                # Определяем дату публикации
+                entry_date = None
+                if 'published' in entry:
+                    entry_date = parsedate_to_datetime(entry.published)
+                elif 'updated' in entry:
+                    entry_date = parsedate_to_datetime(entry.updated)
+                else:
+                    continue  # Если нет даты — пропускаем
+
+                if not newest_entry or entry_date > newest_entry["date"]:
+                    newest_entry = {
+                        "title": entry.title,
+                        "summary": entry.summary,
+                        "link": entry.link,
+                        "date": entry_date
+                    }
+
+    if newest_entry:
+        irony = choice(irony_lines)
+        message = (
+            f"🗞 <b>{newest_entry['title']}</b>\n\n"
+            f"{newest_entry['summary']}\n\n"
+            f"🔗 <a href='{newest_entry['link']}'>Читать полностью</a>\n\n"
+            f"<i>{irony}</i>\n\n"
+            "—\n"
+            "🤡 🤬 😱 🤔 ❤️\n\n"
+            "<a href='https://t.me/alloetodno'>Подписаться на канал</a>"
+        )
+        save_posted_link(newest_entry["link"])
+        print(f"[{datetime.now()}] ✅ Новая новость: {newest_entry['title']}")
+        return message
+
+    print(f"[{datetime.now()}] ⏭ Все новости уже были опубликованы.")
     return None
+
 
 async def scheduled_post():
     print(f"[{datetime.datetime.now()}] ⏰ scheduled_post() вызван")
