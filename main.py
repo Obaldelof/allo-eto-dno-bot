@@ -30,7 +30,7 @@ def post_news():
         d = feedparser.parse(url)
         if d.entries:
             entry = d.entries[0]
-            message = f"📰 <b>{entry.title}</b>
+            message = f"📰 <b>{entry.title}</b>"
 
 {entry.summary}
 
