@@ -65,14 +65,17 @@ def generate_image(title):
     img.save("generated.jpg")
 
 def extract_image(entry_soup):
-        media = entry_soup.find("media:content")
+    # 1. media:content
+    media = entry_soup.find("media:content")
     if media and media.get("url"):
         return media["url"]
 
+    # 2. enclosure
     enclosure = entry_soup.find("enclosure")
     if enclosure and enclosure.get("url"):
         return enclosure["url"]
 
+    # 3. img inside description
     description = entry_soup.find("description")
     if description:
         soup = BeautifulSoup(description.text, "html.parser")
@@ -80,7 +83,8 @@ def extract_image(entry_soup):
         if img and img.get("src"):
             return img["src"]
 
-       content = entry_soup.find("content:encoded")
+    # 4. img inside content:encoded
+    content = entry_soup.find("content:encoded")
     if content:
         soup = BeautifulSoup(content.text, "html.parser")
         img = soup.find("img")
