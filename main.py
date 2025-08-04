@@ -127,7 +127,12 @@ async def scheduled_post():
     message = fetch_news()
     if message:
         try:
-            await bot.send_message(chat_id=CHANNEL_ID, text=message, parse_mode="HTML")
+            await bot.send_message(
+                chat_id=CHANNEL_ID,
+                text=message,
+                parse_mode="HTML",
+                disable_web_page_preview=True
+            )
             print(f"[{datetime.now()}] 📤 Новость отправлена в канал.")
         except Exception as e:
             print(f"[{datetime.now()}] ❌ Ошибка при отправке: {e}")
@@ -142,9 +147,17 @@ async def background_news_loop():
 async def test_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = fetch_news()
     if message:
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=message, parse_mode="HTML")
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id, 
+            text=message, 
+            parse_mode="HTML",
+            disable_web_page_preview=True
+        )
     else:
-        await context.bot.send_message(chat_id=update.effective_chat.id, text="Нет новых новостей.")
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id, 
+            text="Нет новых новостей."
+        )
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
