@@ -133,6 +133,10 @@ def extract_og_image(link):
         print(f"[og:image error] {link}: {e}")
     return None
 
+# Очистка HTML-тегов из summary для Telegram
+def clean_html(html_text):
+    return BeautifulSoup(html_text, "html.parser").get_text()
+    
 def fetch_news():
     last_links = get_last_posted_links()
     candidates = []
@@ -214,12 +218,13 @@ async def scheduled_post():
     if message:
         try:
             if USE_IMAGES and image_path:
-                await bot.send_photo(
-                    chat_id=CHANNEL_ID,
-                    photo=open(image_path, "rb"),
-                    caption=message,
-                    parse_mode="HTML"
-                )
+                with open(image_path, "rb") as photo:
+                    await bot.send_photo(
+                        chat_id=CHANNEL_ID,
+                        photo=photo,
+                        caption=message,
+                        parse_mode="HTML"
+                    )
             else:
                 await bot.send_message(
                     chat_id=CHANNEL_ID,
