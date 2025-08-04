@@ -44,18 +44,15 @@ feeds = [
 
 HISTORY_FILE = "last_news.txt"
 
-
 def get_last_posted_links(limit=5):
     if not os.path.exists(HISTORY_FILE):
         return []
     with open(HISTORY_FILE, "r", encoding="utf-8") as f:
         return [line.strip() for line in f.readlines()][-limit:]
 
-
 def save_posted_link(link: str):
     with open(HISTORY_FILE, "a", encoding="utf-8") as f:
         f.write(link + "\n")
-
 
 def generate_image(title):
     img = Image.new("RGB", (800, 400), color=(23, 29, 40))
@@ -67,13 +64,23 @@ def generate_image(title):
     draw.text((40, 180), title[:80] + ("..." if len(title) > 80 else ""), font=font, fill=(255, 255, 255))
     img.save("generated.jpg")
 
-
-def extract_image(entry_soup):
-    img = entry_soup.find("img")
-    if img and img.get("src"):
-        return img["src"]
+def extract_image(item):
+    enclosure = item.find("enclosure")
+    if enclosure and enclosure.get("url"):
+        return enclosure["url"]
+    
+    media = item.find("media:content")
+    if media and media.get("url"):
+        return media["url"]
+    
+    desc = item.find("description")
+    if desc:
+        soup = BeautifulSoup(desc.text, "html.parser")
+        img = soup.find("img")
+        if img and img.get("src"):
+            return img["src"]
+    
     return None
-
 
 def fetch_news():
     last_links = get_last_posted_links()
@@ -146,7 +153,6 @@ def fetch_news():
 
     return None, None
 
-
 async def scheduled_post():
     message, image_path = fetch_news()
     if message:
@@ -175,7 +181,6 @@ async def background_news_loop():
         await scheduled_post()
         await asyncio.sleep(60)
 
-
 async def test_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message, image_path = fetch_news()
     if message:
@@ -198,7 +203,6 @@ async def test_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             chat_id=update.effective_chat.id,
             text="Нет новых новостей."
         )
-
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
